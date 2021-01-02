@@ -110,6 +110,9 @@ int main(int argc, const char *argv[]) {
     { flatbuffers::GenerateSwift, nullptr, "--swift", "swift", true,
       flatbuffers::GenerateSwiftGRPC, flatbuffers::IDLOptions::kSwift,
       "Generate Swift files for tables/structs", nullptr },
+    { flatbuffers::GenerateScala, nullptr, "--scala", "Scala", true, nullptr,
+      flatbuffers::IDLOptions::kScala,
+      "Generate Scala files for tables/structs", nullptr }
   };
 
   flatbuffers::FlatCompiler::InitParams params;

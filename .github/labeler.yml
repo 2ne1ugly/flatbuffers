@@ -45,6 +45,10 @@ kotlin:
   - '**/*.kt'
   - src/idl_gen_kotlin.cpp
 
+scala:
+  - '**/*.scala'
+  - src/idl_gen_scala.cpp
+
 lua:
   - '**/*.lua'
   - lua/**/*
