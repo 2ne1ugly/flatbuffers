@@ -149,6 +149,22 @@ class ScalaGenerator : public BaseGenerator {
     return value.constant + suffix;
   }
 
+  std::string ElemSize(const flatbuffers::Type &type) const {
+    switch (type.base_type) {
+      case BASE_TYPE_VECTOR:
+        switch (type.element) {
+          case BASE_TYPE_STRUCT:
+            if (type.struct_def->fixed) {
+              return NumToString(type.struct_def->bytesize);
+            } else {
+              return "sizeOfInt";
+            }
+          default: return NumToString(SizeOf(type.element));
+        }
+      default: return NumToString(SizeOf(type.element));
+    }
+  }
+
   void GenCommentWriter(const std::vector<std::string> &dc, CodeWriter &writer,
                         const char *prefix = "") const {
     std::string comment;
@@ -285,7 +301,7 @@ class ScalaGenerator : public BaseGenerator {
                     const std::string &offset) const {
     if (IsVector(type)) {
       return "__vector[" + Type(type.VectorType()) + "](" + offset + ", bb, " +
-             NumToString(SizeOf(type.element)) + ")";
+             ElemSize(type) + ")";
     }
     return "__get[" + Type(type) + "](" + offset + ", bb)";
   }
@@ -331,15 +347,27 @@ class ScalaGenerator : public BaseGenerator {
     std::string comment;
     GenComment(struct_def.doc_comment, &comment, &comment_config);
     writer += comment;
-    auto fixed = struct_def.fixed;
-
     writer.SetValue("STRUCT_NAME", struct_def.name);
-    writer.SetValue("STRUCT_SUPER", fixed ? "Struct" : "Table");
+    writer.SetValue("STRUCT_SUPER", struct_def.fixed ? "Struct" : "Table");
     writer +=
         "class {{STRUCT_NAME}}(private bbPos: Int, private bb: ByteBuffer) "
         "extends {{STRUCT_SUPER}} {";
     writer.IncrementIdentLevel();
     GenStructGetters(struct_def, writer);
+    writer.DecrementIdentLevel();
+    writer += "}";
+    writer += "";
+    writer += "object {{STRUCT_NAME}} {";
+    writer.IncrementIdentLevel();
+    if (struct_def.fixed) {
+      writer +=
+          "implicit val getter: Getter[{{STRUCT_NAME}}] = (o, bb) => "
+          "{{STRUCT_NAME}}(o, bb)";
+    } else {
+      writer +=
+          "implicit val getter: Getter[{{STRUCT_NAME}}] = (o, bb) => "
+          "{{STRUCT_NAME}}(__indirect(o, bb), bb)";
+    }
     writer.DecrementIdentLevel();
     writer += "}";
   }

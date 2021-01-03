@@ -49,8 +49,8 @@ object Table {
     val indirect2 = __indirect(offset2, bb)
     val len1 = __get[Int](indirect1, bb)
     val len2 = __get[Int](indirect2, bb)
-    val startPos1 = indirect1 + SIZEOF_INT
-    val startPos2 = indirect2 + SIZEOF_INT
+    val startPos1 = indirect1 + sizeOfInt
+    val startPos2 = indirect2 + sizeOfInt
     val len = len1.min(len2)
     (0.to(len))
       .find(i => bb.get(i + startPos1) != bb.get(i + startPos2))

@@ -19,6 +19,8 @@ package com.google
 package object flatbuffers {
   private val utf8: Utf8 = Utf8.getDefault
 
+  val sizeOfInt: Int = 4;
+
   implicit val booleanGetter: Getter[Boolean] = (o, bb) => bb.get(o) != 0
   implicit val byteGetter: Getter[Byte] = (o, bb) => bb.get(o)
   implicit val shortGetter: Getter[Short] = (o, bb) => bb.getShort(o)
@@ -29,7 +31,7 @@ package object flatbuffers {
   implicit val stringGetter: Getter[String] = (o, bb) => {
     val stringLengthOffset = __indirect(o)
     val stringLength = __get[Int](stringLengthOffset)
-    val stringDataOffset = stringLengthOffset + SIZEOF_INT
+    val stringDataOffset = stringLengthOffset + sizeOfInt
     utf8.decodeUtf8(bb, stringDataOffset, stringLength)
   }
 
@@ -45,7 +47,7 @@ package object flatbuffers {
         new Seq[A] {
           val vectorLengthOffset = __indirect(vectorOffset, bb)
           val vectorLength = __get[Int](__indirect(vectorOffset, bb), bb)
-          val vectorDataOffset = __indirect(vectorOffset, bb) + SIZEOF_INT
+          val vectorDataOffset = __indirect(vectorOffset, bb) + sizeOfInt
 
           def apply(i: Int): A =
             if (i < 0 || i >= length)
