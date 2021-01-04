@@ -225,8 +225,7 @@ class ScalaGenerator : public BaseGenerator {
         writer += "case {{UNION_VALUE}} => {{UNION_VALUE_NAME}}";
       } else {
         writer +=
-            "case {{UNION_VALUE}} => "
-            "{{UNION_VALUE_NAME}}({{UNION_DATA_TYPE}}(__indirect(o, bb), bb))";
+            "case {{UNION_VALUE}} => {{UNION_VALUE_NAME}}(__get[{{UNION_DATA_TYPE}}](__indirect(o, bb), bb))";
       }
     }
     writer.DecrementIdentLevel();
@@ -350,7 +349,7 @@ class ScalaGenerator : public BaseGenerator {
     writer.SetValue("STRUCT_NAME", struct_def.name);
     writer.SetValue("STRUCT_SUPER", struct_def.fixed ? "Struct" : "Table");
     writer +=
-        "class {{STRUCT_NAME}}(private bbPos: Int, private bb: ByteBuffer) "
+        "class {{STRUCT_NAME}}(val bbPos: Int, val bb: ByteBuffer) "
         "extends {{STRUCT_SUPER}} {";
     writer.IncrementIdentLevel();
     GenStructGetters(struct_def, writer);
@@ -362,11 +361,11 @@ class ScalaGenerator : public BaseGenerator {
     if (struct_def.fixed) {
       writer +=
           "implicit val getter: Getter[{{STRUCT_NAME}}] = (o, bb) => "
-          "{{STRUCT_NAME}}(o, bb)";
+          "new {{STRUCT_NAME}}(o, bb)";
     } else {
       writer +=
           "implicit val getter: Getter[{{STRUCT_NAME}}] = (o, bb) => "
-          "{{STRUCT_NAME}}(__indirect(o, bb), bb)";
+          "new {{STRUCT_NAME}}(__indirect(o, bb), bb)";
     }
     writer.DecrementIdentLevel();
     writer += "}";
@@ -386,6 +385,7 @@ class ScalaGenerator : public BaseGenerator {
       code += "package " + namespace_name;
       code += "\n\n";
       code += "import com.google.flatbuffers._\n";
+      code += "import java.nio._\n";
     }
     if (needs_includes) {}
     code += classcode;
