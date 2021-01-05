@@ -26,21 +26,42 @@ import java.nio.ByteOrder
  * All tables in the generated code derive from this class, and add their own accessors.
  */
 trait Table {
-  protected val bbPos: Int
+  val bbPos: Int
   val bb: ByteBuffer
-  private val vtableStart: Int
-  private val vtableSize: Int
+  val vtableStart: Int = bbPos - __get[Int](bbPos, bb)
+  val vtableSize: Int = __get[Short](vtableStart, bb)
 
   protected def __offset(vtableOffset: Int): Option[Int] =
-    if (vtable_offset < vtable_size)
-      Some(__get[Short](vtable_start + vtable_offset, bb)).filter(_ != 0)
+    if (vtableOffset < vtableSize)
+      Some(__get[Short](vtableStart + vtableOffset, bb).toInt).filter(_ != 0)
     else
       None
 
   protected def sortTables(offsets: List[Int], byteBuffer: ByteBuffer): List[Int] =
-    offsets.sortWith(keysCompare(_, _, byteBuffer))
+    offsets.sortWith(keysCompare(_, _, byteBuffer) > 0)
 
   protected def keysCompare(o1: Int, o2: Int, byteBuffer: ByteBuffer): Int = 0
+
+  def __vector[A](offset: Int, bb: ByteBuffer, elemSize: Int)(implicit getter: Getter[A]): Seq[A] =
+    __offset(offset).map(_ + bbPos) match {
+      case Some(vectorOffset) =>
+        new Seq[A] {
+          private val vectorLengthOffset = __indirect(vectorOffset, bb)
+          private val vectorLength = __get[Int](vectorLengthOffset, bb)
+          private val vectorDataOffset = vectorLengthOffset + sizeOfInt
+
+          def apply(i: Int): A =
+            if (i < 0 || i >= length)
+              throw new IndexOutOfBoundsException(i)
+            else
+              __get[A](vectorDataOffset + i * elemSize, bb)
+          def length: Int = vectorLength
+          def iterator: Iterator[A] = Iterator.tabulate(vectorLength)(i => apply(i))
+        }
+
+      case None => Nil;
+    }
+
 }
 
 object Table {
@@ -52,9 +73,9 @@ object Table {
     val startPos1 = indirect1 + sizeOfInt
     val startPos2 = indirect2 + sizeOfInt
     val len = len1.min(len2)
-    (0.to(len))
+    0.to(len)
       .find(i => bb.get(i + startPos1) != bb.get(i + startPos2))
-      .map(bb.get(i + startPos1) - bb.get(i + startPos2))
+      .map(i => bb.get(i + startPos1) - bb.get(i + startPos2))
       .getOrElse(len1 - len2)
   }
 }

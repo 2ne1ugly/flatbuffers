@@ -16,6 +16,8 @@
 
 package com.google.flatbuffers
 
+import java.nio.ByteBuffer
+
 trait Getter[+A] {
   def get(offset: Int, bb: ByteBuffer): A
 }

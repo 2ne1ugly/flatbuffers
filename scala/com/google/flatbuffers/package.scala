@@ -16,6 +16,8 @@
 
 package com.google
 
+import java.nio.ByteBuffer
+
 package object flatbuffers {
   private val utf8: Utf8 = Utf8.getDefault
 
@@ -35,29 +37,9 @@ package object flatbuffers {
     utf8.decodeUtf8(bb, stringDataOffset, stringLength)
   }
 
-  def __get[A](offset: Int)(implicit getter: Getter[A]): A =
+  def __get[A](offset: Int, bb: ByteBuffer)(implicit getter: Getter[A]): A =
     getter.get(offset, bb)
 
   def __indirect(offset: Int, bb: ByteBuffer): Int =
     offset + __get[Int](offset, bb)
-
-  def __vector[A](offset: Int, bb: ByteBuffer, elemSize: Int)(implicit getter: Getter[A]): Seq[A] =
-    __offset(offset).map(_ + bbPos) match {
-      case Some(vectorOffset) => 
-        new Seq[A] {
-          val vectorLengthOffset = __indirect(vectorOffset, bb)
-          val vectorLength = __get[Int](__indirect(vectorOffset, bb), bb)
-          val vectorDataOffset = __indirect(vectorOffset, bb) + sizeOfInt
-
-          def apply(i: Int): A =
-            if (i < 0 || i >= length)
-              throw new IndexOutOfBoundsException(i)
-            else
-              __.get[A](vectorDataOffset + i * elemSize)
-          def length: Int = vectorLength
-          def iterator: Iterator[A] = Iterator.tabulate(vectorLength)(i => apply(i))
-        }
-
-      case None => Nil;
-    }
 }
