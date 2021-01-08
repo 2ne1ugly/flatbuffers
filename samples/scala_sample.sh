@@ -42,8 +42,7 @@ fi
 echo Compiling and running the Scala sample.
 
 # Compile and execute the sample.
-# javac -classpath ${sampledir}/../java:${sampledir} SampleBinary.java
-# java -classpath ${sampledir}/../java:${sampledir} SampleBinary
+scalac -classpath ${sampledir}/../scala:${sampledir} SampleBinary.scala -d ${sampledir}/scala
 
 # Cleanup temporary files.
 # rm -rf MyGame/
